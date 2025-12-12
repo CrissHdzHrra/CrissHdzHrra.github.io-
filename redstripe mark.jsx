@@ -7,7 +7,8 @@ import {
   Settings, Users, BarChart3, Bell, Briefcase, Check,
   Trash2, Lock, Mail, Palette, Monitor, Layers, FileText,
   Clock, CreditCard, MapPin, RefreshCcw, Paperclip, 
-  ExternalLink, MessageCircle
+  ExternalLink, MessageCircle, Edit, MoreVertical,
+  Zap, Lightbulb, TrendingUp, Eye
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
@@ -136,6 +137,9 @@ export default function App() {
   ]);
   const [isSearchActiveGlobal, setIsSearchActiveGlobal] = useState(false);
   const [isFirebaseReady, setIsFirebaseReady] = useState(false);
+  
+  // ESTADO NUEVO: SIMULACIÓN DE USUARIO
+  const [isSimulating, setIsSimulating] = useState(false);
 
   // Inicializar Firebase Auth y crear Admin si no existe
   useEffect(() => {
@@ -196,6 +200,7 @@ export default function App() {
     setUser(null);
     localStorage.removeItem('redstripe_user');
     setView('home');
+    setIsSimulating(false);
   };
 
   const addToCart = (product, size = null, color = null) => {
@@ -226,6 +231,8 @@ export default function App() {
 
   if (!user) return <ModernAuth onLogin={handleLogin} isFirebaseReady={isFirebaseReady} />;
 
+  const isClientView = user.role === 'client' || user.role === 'guest' || isSimulating;
+
   return (
     <>
       <GlobalStyles />
@@ -239,8 +246,20 @@ export default function App() {
         />
       )}
       
-      {user.role === 'client' || user.role === 'guest' ? (
-        <div className="min-h-screen bg-gray-50 flex flex-col pt-20"> 
+      {isClientView ? (
+        <div className={`min-h-screen bg-gray-50 flex flex-col ${isSimulating ? 'pt-[120px]' : 'pt-20'}`}> 
+           {/* BANNER DE SIMULACIÓN */}
+           {isSimulating && (
+             <div 
+               onClick={() => setIsSimulating(false)} 
+               className="fixed top-0 inset-x-0 h-10 bg-indigo-600 text-white flex items-center justify-center font-bold text-sm cursor-pointer hover:bg-indigo-700 z-[70] transition-colors shadow-md"
+             >
+                <span className="flex items-center gap-2">
+                    <Eye size={16}/> Estas en la vista del usuario, haz click aqui para regresar al panel de administrador
+                </span>
+             </div>
+           )}
+
            <TopNavigation 
               user={user} 
               setView={setView} 
@@ -250,6 +269,7 @@ export default function App() {
               wishlistCount={wishlist.length}
               externalSearchActive={isSearchActiveGlobal}
               setExternalSearchActive={setIsSearchActiveGlobal}
+              simulationOffset={isSimulating}
            />
            
            <main className="flex-1 w-full max-w-[1600px] mx-auto p-8 fade-in relative">
@@ -289,7 +309,7 @@ export default function App() {
 
         </div>
       ) : (
-        <AdminLayout user={user} setUser={handleLogout} />
+        <AdminLayout user={user} setUser={handleLogout} onSimulate={() => { setIsSimulating(true); setView('home'); }} />
       )}
     </>
   );
@@ -299,13 +319,16 @@ export default function App() {
 // --- CLIENTE WEB: BARRA SUPERIOR (HEADER) ---
 // ------------------------------------------------------------------
 
-const TopNavigation = ({ user, setView, activeView, cartCount, openCart, wishlistCount, externalSearchActive, setExternalSearchActive }) => {
+const TopNavigation = ({ user, setView, activeView, cartCount, openCart, wishlistCount, externalSearchActive, setExternalSearchActive, simulationOffset }) => {
     
     return (
         <>
             {externalSearchActive && <div className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm" onClick={() => setExternalSearchActive(false)} />}
             
-            <header className="fixed top-0 inset-x-0 h-20 bg-white border-b border-gray-200 z-50 flex items-center justify-between px-6 md:px-12 shadow-sm transition-all">
+            <header 
+                className="fixed inset-x-0 h-20 bg-white border-b border-gray-200 z-50 flex items-center justify-between px-6 md:px-12 shadow-sm transition-all"
+                style={{ top: simulationOffset ? '40px' : '0' }}
+            >
                 {/* Logo & Buscador */}
                 <div className="flex items-center gap-8 md:gap-12 flex-1">
                     <div className="cursor-pointer" onClick={() => setView('home')}>
@@ -421,7 +444,7 @@ const RedstripeBot = ({ setView, activateSearch }) => {
                 isContact: true 
             };
         } else {
-            botResponse = { type: 'bot', text: 'alch no le entiendo, nomas tengo esas opciones pa:' };
+            botResponse = { type: 'bot', text: 'Mmm, no estoy seguro de entender al 100%, pero aquí tienes mis opciones principales:' };
             setTimeout(() => setShowOptions(true), 1000);
         }
         return botResponse;
@@ -1250,15 +1273,15 @@ const ModernAuth = ({ onLogin, isFirebaseReady }) => {
          <div className="relative z-10 flex flex-col items-center text-center space-y-6 max-w-lg">
              <div className="w-64 mb-4">
                  <img 
-                    src="logo.jpg" 
+                    src="logo.png" 
                     alt="REDSTRIPE LOGO" 
                     className="w-full h-auto drop-shadow-2xl" 
                  />
              </div>
              
              <h1 className="text-5xl text-white font-bebas tracking-wider leading-none">
-                 MÁS QUE MODA,<br/>
-                 <span className="text-[var(--primary-red)]">ES CULTURA.</span>
+                 "Make a fashionrush,<br/>
+                 <span className="text-[var(--primary-red)]">with a REDSTRIPE".</span>
              </h1>
              <p className="text-gray-300 text-sm max-w-xs leading-relaxed">
                  Únete a la comunidad creativa más grande. Descubre ropa exclusiva y assets digitales únicos.
@@ -1270,7 +1293,7 @@ const ModernAuth = ({ onLogin, isFirebaseReady }) => {
       <div 
         className="w-full md:w-1/2 flex items-center justify-center p-8 lg:p-16 relative"
         style={{
-            backgroundImage: 'url("shedemon.png")', // Textura madera quemada
+            backgroundImage: " shedemon.png", // FONDO BACKGROUND 
             backgroundSize: 'cover',
             backgroundPosition: 'center',
         }}
@@ -1358,34 +1381,360 @@ const ModernAuth = ({ onLogin, isFirebaseReady }) => {
   );
 };
 
-const AdminLayout = ({ user, setUser }) => (
-    <div className="flex h-screen bg-gray-100">
-        <aside className="w-64 bg-white border-r border-gray-200 p-6">
-            <h1 className="text-2xl font-bebas mb-8">ADMIN PANEL</h1>
-            <nav className="space-y-2">
-                <button className="w-full text-left px-4 py-2 bg-black text-white rounded text-sm font-bold">Dashboard</button>
-                <button className="w-full text-left px-4 py-2 text-gray-500 hover:bg-gray-100 rounded text-sm font-bold">Productos</button>
-                <button className="w-full text-left px-4 py-2 text-gray-500 hover:bg-gray-100 rounded text-sm font-bold">Comisiones</button>
-            </nav>
-            <button onClick={setUser} className="mt-auto absolute bottom-6 flex items-center gap-2 text-red-500 text-sm font-bold"><LogOut size={16}/> Salir</button>
-        </aside>
-        <main className="flex-1 p-8">
-            <h2 className="text-3xl font-bebas mb-6">Dashboard General</h2>
-            <div className="grid grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-lg shadow-sm">
-                    <p className="text-gray-400 text-xs font-bold uppercase">Ventas Totales</p>
-                    <p className="text-3xl font-bebas mt-2">$12,450.00</p>
+// ------------------------------------------------------------------
+// --- ADMIN PANEL COMPONENTS ---
+// ------------------------------------------------------------------
+
+const AdminLayout = ({ user, setUser, onSimulate }) => {
+    const [currentView, setCurrentView] = useState('dashboard');
+    
+    return (
+        <div className="flex h-screen bg-gray-100 relative overflow-hidden font-sans">
+            {/* Sidebar */}
+            <aside className="w-64 bg-white border-r border-gray-200 p-6 flex flex-col z-20 shadow-sm">
+                <div className="flex items-center gap-2 mb-8">
+                    <div className="w-8 h-8 bg-[var(--primary-red)] rounded flex items-center justify-center text-white font-bold text-sm">RM</div>
+                    <h1 className="text-xl font-bebas tracking-wide">ADMIN PANEL</h1>
                 </div>
-                <div className="bg-white p-6 rounded-lg shadow-sm">
-                    <p className="text-gray-400 text-xs font-bold uppercase">Comisiones Activas</p>
-                    <p className="text-3xl font-bebas mt-2">4</p>
+                
+                <nav className="space-y-2 flex-1">
+                    <AdminNavButton label="Dashboard" active={currentView === 'dashboard'} onClick={() => setCurrentView('dashboard')} icon={BarChart3} />
+                    <AdminNavButton label="Productos" active={currentView === 'products'} onClick={() => setCurrentView('products')} icon={Package} />
+                    <AdminNavButton label="Comisiones" active={currentView === 'commissions'} onClick={() => setCurrentView('commissions')} icon={MessageSquare} />
+                    <AdminNavButton label="Usuarios" active={currentView === 'users'} onClick={() => setCurrentView('users')} icon={Users} />
+                    <AdminNavButton 
+                        label="Parcial 3" 
+                        active={false} 
+                        onClick={() => window.open('https://crisshdzhrra.github.io/CrissHdzHrra.github.io-/', '_blank')} 
+                        icon={ExternalLink} 
+                    />
+                </nav>
+
+                <div className="mt-auto space-y-4">
+                     {/* BOTÓN VISTA SIMULADA */}
+                     <div className="pt-4 border-t border-gray-100">
+                        <button 
+                            onClick={onSimulate}
+                            className="w-full flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-bold hover:bg-indigo-100 transition-colors"
+                        >
+                            <Eye size={16}/> Vista de Usuario
+                        </button>
+                     </div>
+
+                     <div className="flex items-center gap-3 pt-2">
+                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center"><User size={14}/></div>
+                        <div className="overflow-hidden">
+                            <p className="text-xs font-bold truncate">{user.name}</p>
+                            <p className="text-[10px] text-gray-500 truncate">{user.email}</p>
+                        </div>
+                     </div>
+                     <button onClick={setUser} className="w-full flex items-center justify-center gap-2 text-red-500 text-sm font-bold hover:bg-red-50 p-2 rounded transition-colors"><LogOut size={16}/> Cerrar Sesión</button>
                 </div>
-                <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-indigo-500">
-                    <p className="text-gray-400 text-xs font-bold uppercase">Usuario Actual</p>
-                    <p className="text-xl font-bold mt-2">{user.name}</p>
-                    <p className="text-xs text-gray-500">{user.email}</p>
+            </aside>
+
+            {/* Main Content */}
+            <main className="flex-1 overflow-y-auto bg-gray-50 p-8 relative">
+                {currentView === 'dashboard' && <AdminDashboard user={user} />}
+                {currentView === 'products' && <AdminProducts />}
+                {currentView === 'commissions' && <AdminCommissions />}
+                {currentView === 'users' && <div className="text-center text-gray-400 mt-20 flex flex-col items-center"><Users size={48} className="mb-4 opacity-50"/> <p>Gestión de usuarios próximamente.</p></div>}
+            </main>
+
+            {/* Admin AI Bot */}
+            <AdminAIBot />
+        </div>
+    );
+};
+
+const AdminNavButton = ({ label, active, onClick, icon: Icon }) => (
+    <button 
+        onClick={onClick} 
+        className={`w-full text-left px-4 py-3 rounded-lg text-sm font-bold flex items-center gap-3 transition-all ${active ? 'bg-black text-white shadow-md transform scale-105' : 'text-gray-500 hover:bg-gray-100'}`}
+    >
+        <Icon size={18} />
+        {label}
+    </button>
+);
+
+const AdminDashboard = ({ user }) => (
+    <div className="fade-in space-y-8">
+        <header>
+            <h2 className="text-3xl font-bebas mb-1">Bienvenido, {user.name}</h2>
+            <p className="text-gray-500 text-sm">Resumen de actividad de hoy.</p>
+        </header>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start justify-between">
+                <div>
+                    <p className="text-gray-400 text-xs font-bold uppercase mb-1">Ventas Totales</p>
+                    <p className="text-3xl font-bebas">$12,450.00</p>
+                    <p className="text-xs text-green-500 font-bold mt-2 flex items-center gap-1"><TrendingUp size={12}/> +15% vs ayer</p>
+                </div>
+                <div className="p-3 bg-green-50 rounded-lg text-green-600"><CreditCard size={24}/></div>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start justify-between">
+                <div>
+                    <p className="text-gray-400 text-xs font-bold uppercase mb-1">Comisiones Activas</p>
+                    <p className="text-3xl font-bebas">4</p>
+                    <p className="text-xs text-orange-500 font-bold mt-2">2 pendientes de revisión</p>
+                </div>
+                <div className="p-3 bg-orange-50 rounded-lg text-orange-600"><Briefcase size={24}/></div>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-start justify-between">
+                <div>
+                    <p className="text-gray-400 text-xs font-bold uppercase mb-1">Nuevos Usuarios</p>
+                    <p className="text-3xl font-bebas">128</p>
+                </div>
+                <div className="p-3 bg-blue-50 rounded-lg text-blue-600"><Users size={24}/></div>
+            </div>
+        </div>
+
+        {/* Recent Activity Table Mock */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h3 className="font-bold text-sm">Actividad Reciente</h3>
+                <button className="text-xs text-[var(--primary-red)] font-bold hover:underline">Ver todo</button>
+            </div>
+            <div className="p-6">
+                <div className="space-y-4">
+                    {[1,2,3].map(i => (
+                        <div key={i} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold">U{i}</div>
+                                <div>
+                                    <p className="text-sm font-bold">Nueva Orden #102{i}</p>
+                                    <p className="text-xs text-gray-400">Hace {i} horas</p>
+                                </div>
+                            </div>
+                            <span className="text-sm font-bold text-green-600">+$850.00</span>
+                        </div>
+                    ))}
                 </div>
             </div>
-        </main>
+        </div>
     </div>
 );
+
+const AdminProducts = () => {
+    return (
+        <div className="fade-in h-full flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+                <div>
+                    <h2 className="text-3xl font-bebas">Inventario</h2>
+                    <p className="text-gray-500 text-sm">Gestiona tus productos y precios.</p>
+                </div>
+                <button className="bg-black text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-gray-800 transition-colors">
+                    <Plus size={16}/> Nuevo Producto
+                </button>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex-1 overflow-hidden flex flex-col">
+                <div className="p-4 border-b border-gray-100 flex gap-4">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-2.5 text-gray-400" size={18}/>
+                        <input type="text" placeholder="Buscar producto..." className="w-full pl-10 pr-4 py-2 bg-gray-50 rounded-lg text-sm outline-none focus:ring-1 focus:ring-black"/>
+                    </div>
+                    <select className="bg-gray-50 rounded-lg px-4 text-sm outline-none">
+                        <option>Todas las categorías</option>
+                        <option>Ropa</option>
+                        <option>Digital</option>
+                    </select>
+                </div>
+                
+                <div className="overflow-auto flex-1">
+                    <table className="w-full text-left text-sm">
+                        <thead className="bg-gray-50 text-gray-500 font-bold text-xs uppercase">
+                            <tr>
+                                <th className="p-4">Producto</th>
+                                <th className="p-4">Categoría</th>
+                                <th className="p-4">Precio</th>
+                                <th className="p-4">Rating</th>
+                                <th className="p-4 text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {PRODUCTS.map(product => (
+                                <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="p-4 flex items-center gap-3">
+                                        <img src={product.img} className="w-10 h-10 rounded object-cover bg-gray-200" />
+                                        <span className="font-bold">{product.name}</span>
+                                    </td>
+                                    <td className="p-4 text-gray-500">{product.category}</td>
+                                    <td className="p-4 font-mono">${product.price}</td>
+                                    <td className="p-4 flex items-center gap-1"><Star size={12} className="fill-yellow-400 text-yellow-400"/> {product.rating}</td>
+                                    <td className="p-4 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button className="p-1.5 hover:bg-gray-200 rounded text-gray-600"><Edit size={16}/></button>
+                                            <button className="p-1.5 hover:bg-red-50 rounded text-red-500"><Trash2 size={16}/></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const AdminCommissions = () => {
+    const [selectedChat, setSelectedChat] = useState(null);
+    const [msgInput, setMsgInput] = useState("");
+
+    // Mock Chats
+    const CHATS = [
+        { id: 1, client: "Cris Herra", project: "Logo Design Pro", status: "Activo", lastMsg: "¿Tienes referencias?", time: "10:00 AM", unread: 1 },
+        { id: 2, client: "Usuario Invitado", project: "Stream Pack", status: "Pendiente", lastMsg: "Hola, me interesa el pack.", time: "Ayer", unread: 0 },
+        { id: 3, client: "Sofia M.", project: "Ilustración Custom", status: "Finalizado", lastMsg: "¡Gracias! Quedó genial.", time: "2 días", unread: 0 },
+    ];
+
+    const [messages, setMessages] = useState([
+        { id: 1, sender: 'user', text: 'Hola, me gustaría cotizar un logo.' },
+        { id: 2, sender: 'admin', text: '¡Hola! Claro, ¿tienes alguna idea en mente?' },
+        { id: 3, sender: 'user', text: 'Sí, algo estilo cyberpunk.' }
+    ]);
+
+    const handleSend = () => {
+        if (!msgInput.trim()) return;
+        setMessages([...messages, { id: Date.now(), sender: 'admin', text: msgInput }]);
+        setMsgInput("");
+    };
+
+    return (
+        <div className="fade-in h-full flex flex-col md:flex-row gap-6 h-[calc(100vh-100px)]">
+            {/* Lista de Chats */}
+            <div className="w-full md:w-1/3 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                <div className="p-4 border-b border-gray-100">
+                    <h2 className="font-bebas text-xl">Mensajes</h2>
+                </div>
+                <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
+                    {CHATS.map(chat => (
+                        <div 
+                            key={chat.id} 
+                            onClick={() => setSelectedChat(chat)}
+                            className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${selectedChat?.id === chat.id ? 'bg-gray-50 border-l-4 border-[var(--primary-red)]' : ''}`}
+                        >
+                            <div className="flex justify-between items-start mb-1">
+                                <h4 className="font-bold text-sm">{chat.client}</h4>
+                                <span className="text-[10px] text-gray-400">{chat.time}</span>
+                            </div>
+                            <p className="text-xs text-[var(--primary-red)] font-bold mb-1">{chat.project}</p>
+                            <p className="text-xs text-gray-500 truncate">{chat.lastMsg}</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Ventana de Chat */}
+            <div className="w-full md:w-2/3 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                {selectedChat ? (
+                    <>
+                        <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs">
+                                    {selectedChat.client.substring(0,2).toUpperCase()}
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-sm">{selectedChat.client}</h3>
+                                    <p className="text-xs text-gray-500">Proyecto: {selectedChat.project}</p>
+                                </div>
+                            </div>
+                            <button className="text-gray-400 hover:text-black"><MoreVertical size={18}/></button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50/30">
+                            {messages.map(msg => (
+                                <div key={msg.id} className={`flex ${msg.sender === 'admin' ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-[70%] p-3 rounded-xl text-sm ${msg.sender === 'admin' ? 'bg-black text-white rounded-br-none' : 'bg-white border border-gray-200 rounded-bl-none shadow-sm'}`}>
+                                        {msg.text}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="p-4 border-t border-gray-100 flex gap-2">
+                            <button className="p-2 text-gray-400 hover:bg-gray-100 rounded-full"><Paperclip size={20}/></button>
+                            <input 
+                                type="text" 
+                                className="flex-1 bg-gray-100 rounded-full px-4 text-sm outline-none focus:ring-1 focus:ring-black"
+                                placeholder="Escribe un mensaje..."
+                                value={msgInput}
+                                onChange={(e) => setMsgInput(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                            />
+                            <button onClick={handleSend} className="p-2 bg-[var(--primary-red)] text-white rounded-full hover:bg-red-700 transition-colors"><Send size={18}/></button>
+                        </div>
+                    </>
+                ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
+                        <MessageSquare size={48} className="mb-4 opacity-20"/>
+                        <p>Selecciona una conversación para comenzar</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const AdminAIBot = () => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [messages, setMessages] = useState([
+        { type: 'bot', text: '¡Hola Admin! Soy tu asistente de negocios. ¿Necesitas un consejo rápido sobre ventas, inventario o marketing?' }
+    ]);
+    const [showOptions, setShowOptions] = useState(true);
+
+    const handleOption = (opt) => {
+        setMessages(prev => [...prev, { type: 'user', text: opt }]);
+        setShowOptions(false);
+        setTimeout(() => {
+            let reply = "";
+            if (opt.includes("Ventas")) reply = "Para aumentar las ventas hoy, sugiero destacar los 'Hoodies Oversized' en redes sociales. Son tendencia esta semana (+15% búsquedas).";
+            else if (opt.includes("Inventario")) reply = "El stock de 'Camisas Oxford' es bajo (quedan 3 unidades). Deberías reabastecer pronto o marcarlas como 'Pocas Unidades' para crear urgencia.";
+            else reply = "Recuerda revisar las 2 comisiones pendientes. Responder rápido aumenta la tasa de cierre en un 40%.";
+            
+            setMessages(prev => [...prev, { type: 'bot', text: reply }]);
+            setTimeout(() => setShowOptions(true), 2000); // Show options again
+        }, 1000);
+    };
+
+    return (
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 font-sans">
+             {isOpen && (
+                 <div className="bg-white rounded-2xl shadow-2xl w-80 mb-2 border border-gray-200 overflow-hidden slide-up flex flex-col h-[400px]">
+                     <div className="bg-indigo-600 text-white p-4 flex justify-between items-center shrink-0">
+                         <div className="flex items-center gap-2">
+                             <Lightbulb size={18} className="text-yellow-300"/>
+                             <span className="font-bold text-sm">AI Business Tips</span>
+                         </div>
+                         <button onClick={() => setIsOpen(false)}><X size={18}/></button>
+                     </div>
+                     
+                     <div className="p-4 bg-gray-50 flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+                         {messages.map((msg, idx) => (
+                             <div key={idx} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                 <div className={`max-w-[85%] p-3 rounded-xl text-xs ${msg.type === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm'}`}>
+                                     {msg.text}
+                                 </div>
+                             </div>
+                         ))}
+                         {showOptions && (
+                             <div className="grid grid-cols-1 gap-2 mt-2">
+                                 <button onClick={() => handleOption('Consejo de Ventas')} className="text-left px-3 py-2 text-xs font-bold border rounded bg-white hover:bg-indigo-50 text-indigo-700 border-indigo-100 flex items-center gap-2"><Zap size={12}/> Consejo de Ventas</button>
+                                 <button onClick={() => handleOption('Estado de Inventario')} className="text-left px-3 py-2 text-xs font-bold border rounded bg-white hover:bg-indigo-50 text-indigo-700 border-indigo-100 flex items-center gap-2"><Package size={12}/> Estado de Inventario</button>
+                             </div>
+                         )}
+                     </div>
+                 </div>
+             )}
+
+             <button 
+                onClick={() => setIsOpen(!isOpen)} 
+                className="w-14 h-14 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-xl flex items-center justify-center transition-colors group relative"
+             >
+                {isOpen ? <X size={24}/> : <Zap size={24} className="group-hover:scale-110 transition-transform fill-current"/>}
+                {!isOpen && <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>}
+             </button>
+        </div>
+    );
+};
